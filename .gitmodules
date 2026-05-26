@@ -1,9 +1,9 @@
 [submodule "backend"]
 	path = backend
 	url = https://github.com/DrywFiltiarn/AnvilML.git
-	branch = develop
+	branch = main
 
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/DrywFiltiarn/BloomeryUI.git
-	branch = develop
+	branch = main
