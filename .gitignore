@@ -1,0 +1,14 @@
+# Generated artifacts
+artifacts/
+
+# Environment files
+.env
+*.env
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
