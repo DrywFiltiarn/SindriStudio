@@ -25,10 +25,21 @@ Status: PENDING
 P1-A5
 
 ## Notes
-Prerequisite: P1-A3 must be complete and committed.
+Prerequisite: P1-A3 is COMPLETE and committed.
 All 3 verification commands pass: build, test (5/5), clippy.
 
 Plan report: .cline/reports/P1-A4.md
 
 ## Status
 PENDING
+
+---
+
+## Completed Tasks
+
+### P1-A3: anvilml-core: config types
+- **Status**: COMPLETE
+- **Commit**: 91aa735 feat(anvilml-core): add config types, error types, and config loading
+- **Tests**: 5/5 passing
+- **Clippy**: clean
+- **Pushed**: yes (both backend and main repos)
