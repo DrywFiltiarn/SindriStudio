@@ -1,41 +1,34 @@
-# Current Task: P1-A2
+# Current Task: P1-A4
 
 ## Task
-Cargo workspace + crate skeletons — create AnvilML repo structure with workspace Cargo.toml and all 8 crate skeletons that compile. Each crate has a lib.rs (or main.rs) that compiles with only a `//! crate description` comment. No logic yet.
+anvilml-core: error types — implement AnvilError enum and Result<T> type alias with proper thiserror derives.
 
 ## Phase
 1 — Foundation
 
 ## Step
-4-COMMIT
+1-PLAN
 
 ## Step 1: Plan
-Status: COMPLETE
-Report written: yes
+Status: PENDING
 
 ## Step 2: Implement
-Status: COMPLETE
-Files created: 22
-Files modified: 0
-Build status: PASS
+Status: PENDING
 
 ## Step 3: Test
-Status: COMPLETE
-Commands run: cargo build, cargo test, cargo clippy
-Result: 9/9 tests passed, clippy clean
+Status: PENDING
 
 ## Step 4: Commit
-Status: COMPLETE
-Backend commit: e554f7f feat: add Cargo workspace with 8 crate skeletons and launcher binary
-Frontend commit: N/A
-Root commit:     (pending — update .gitmodules reference)
-Pushed: yes
+Status: PENDING
 
 ## Next Task
-P1-A3
+P1-A5
 
 ## Notes
-Prerequisite: P1-A1 must be complete and committed.
-All 3 verification commands pass: build, test (9/9), clippy.
+Prerequisite: P1-A3 must be complete and committed.
+All 3 verification commands pass: build, test (5/5), clippy.
 
-Plan report: .cline/reports/P1-A2.md
+Plan report: .cline/reports/P1-A4.md
+
+## Status
+PENDING
