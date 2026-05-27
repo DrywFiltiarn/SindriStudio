@@ -1,7 +1,7 @@
-# Current Task: P1-A4
+# Current Task: P1-A5
 
 ## Task
-anvilml-core: error types — implement AnvilError enum and Result<T> type alias with proper thiserror derives.
+anvilml-ipc: message types + framing
 
 ## Phase
 1 — Foundation
@@ -10,32 +10,40 @@ anvilml-core: error types — implement AnvilError enum and Result<T> type alias
 1-PLAN
 
 ## Step 1: Plan
-Status: PENDING
+Status: COMPLETE
 
 ## Step 2: Implement
-Status: PENDING
+Status: COMPLETE
 
 ## Step 3: Test
-Status: PENDING
+Status: COMPLETE — 21/21 tests passing
 
 ## Step 4: Commit
-Status: PENDING
+Status: COMPLETE
+- backend commit: `fa55b03` feat(anvilml-ipc): message types + framing
+- main commit: `7b5d7f9` chore: update backend submodule
+- Pushed: yes (both repos)
 
 ## Next Task
-P1-A5
+P1-A6
 
 ## Notes
-Prerequisite: P1-A3 is COMPLETE and committed.
-All 3 verification commands pass: build, test (5/5), clippy.
-
-Plan report: .cline/reports/P1-A4.md
+Prerequisite: P1-A4 is COMPLETE and committed.
+Plan report: .cline/reports/P1-A5.md
 
 ## Status
-PENDING
+IN_PROGRESS
 
 ---
 
 ## Completed Tasks
+
+### P1-A4: anvilml-core: job + model + hardware types
+- **Status**: COMPLETE
+- **Commit**: 1e46b02 feat(anvilml-core): add job, model, hardware, worker, and WebSocket event types
+- **Tests**: 13/13 passing
+- **Clippy**: clean
+- **Pushed**: yes (to https://github.com/DrywFiltiarn/AnvilML.git)
 
 ### P1-A3: anvilml-core: config types
 - **Status**: COMPLETE
