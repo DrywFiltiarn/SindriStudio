@@ -1,7 +1,7 @@
-# Current Task: P1-A6
+# Current Task: P1-A7
 
 ## Task
-anvilml-hardware: detector trait + CPU impl
+anvilml-hardware: ROCm detection
 
 ## Phase
 1 — Foundation
@@ -13,27 +13,32 @@ anvilml-hardware: detector trait + CPU impl
 Status: COMPLETE
 
 ## Step 2: Implement
-Status: COMPLETE
+Status: PENDING
 
 ## Step 3: Test
-Status: COMPLETE
+Status: PENDING
 
 ## Step 4: Commit
-Status: COMPLETE
+Status: PENDING
 
 ## Next Task
-P1-A7
+P1-A8
 
 ## Notes
-Prerequisite: P1-A4 is COMPLETE and committed.
-Plan report: .cline/reports/P1-A6.md
+Prerequisite: P1-A6 is COMPLETE and committed.
+Plan report: .cline/reports/P1-A7.md
 
 ## Status
-DONE
+IN_PROGRESS
 
 ---
 
 ## Completed Tasks
+
+### P1-A6: anvilml-hardware: detector trait + CPU impl
+- **Status**: COMPLETE
+- **Tests**: passing
+- **Clippy**: clean
 
 ### P1-A5: anvilml-ipc: message types + framing
 - **Status**: COMPLETE
