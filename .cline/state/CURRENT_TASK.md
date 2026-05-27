@@ -1,7 +1,7 @@
-# Current Task: P1-A5
+# Current Task: P1-A6
 
 ## Task
-anvilml-ipc: message types + framing
+anvilml-hardware: detector trait + CPU impl
 
 ## Phase
 1 — Foundation
@@ -13,23 +13,20 @@ anvilml-ipc: message types + framing
 Status: COMPLETE
 
 ## Step 2: Implement
-Status: COMPLETE
+Status: PENDING
 
 ## Step 3: Test
-Status: COMPLETE — 21/21 tests passing
+Status: PENDING
 
 ## Step 4: Commit
-Status: COMPLETE
-- backend commit: `fa55b03` feat(anvilml-ipc): message types + framing
-- main commit: `7b5d7f9` chore: update backend submodule
-- Pushed: yes (both repos)
+Status: PENDING
 
 ## Next Task
-P1-A6
+P1-A7
 
 ## Notes
 Prerequisite: P1-A4 is COMPLETE and committed.
-Plan report: .cline/reports/P1-A5.md
+Plan report: .cline/reports/P1-A6.md
 
 ## Status
 IN_PROGRESS
@@ -37,6 +34,13 @@ IN_PROGRESS
 ---
 
 ## Completed Tasks
+
+### P1-A5: anvilml-ipc: message types + framing
+- **Status**: COMPLETE
+- **Commit**: fa55b03 feat(anvilml-ipc): message types + framing
+- **Tests**: 21/21 passing
+- **Clippy**: clean
+- **Pushed**: yes (both backend and main repos)
 
 ### P1-A4: anvilml-core: job + model + hardware types
 - **Status**: COMPLETE
