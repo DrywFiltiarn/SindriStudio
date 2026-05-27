@@ -13,13 +13,13 @@ anvilml-hardware: detector trait + CPU impl
 Status: COMPLETE
 
 ## Step 2: Implement
-Status: PENDING
+Status: COMPLETE
 
 ## Step 3: Test
-Status: PENDING
+Status: COMPLETE
 
 ## Step 4: Commit
-Status: PENDING
+Status: COMPLETE
 
 ## Next Task
 P1-A7
@@ -29,7 +29,7 @@ Prerequisite: P1-A4 is COMPLETE and committed.
 Plan report: .cline/reports/P1-A6.md
 
 ## Status
-IN_PROGRESS
+DONE
 
 ---
 
