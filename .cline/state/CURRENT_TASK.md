@@ -1,27 +1,28 @@
 # Current Task
 
-**Task:** P1-D2 — IPC bridge (stdin writer + stdout reader)
-**Status:** ✅ COMPLETE — all tests pass, zero failures
+**Task:** P1-D3 — anvilml-worker: ROCm/CUDA/IPEX env injection
+**Status:** ✅ COMPLETE — Implemented, tested, committed, pushed
 **Step:** 4-DONE ✅
 
 ## Completed
-- [x] Created `ipc_bridge.rs` with `spawn_stdin_writer()` and `spawn_stdout_reader()`
-- [x] Modified `managed.rs` — added `msg_tx`, `stdin_reader_handle`, `stdout_reader_handle` fields
-- [x] Modified `pool.rs` — extracted inline stdout reader into bridge, wired up stdin writer, replaced stub `send_to()`, added respawn logic with 2s delay, updated `shutdown_all()`
-- [x] Modified `lib.rs` — added `pub mod ipc_bridge;`
-- [x] All tests pass: 6 passed, 0 failed, 3 ignored (require Python)
-- [x] Workspace compiles cleanly (anvilml-server depends on anvilml-worker)
+- [x] Read CURRENT_TASK.md (P1-D2 was the previous task)
+- [x] Read docs/ENVIRONMENT.md — full env var spec per device type
+- [x] Read docs/ARCHITECTURE.md — crate layout, anvilml-worker module map
+- [x] Read docs/TASKS_PHASE1.md — P1-D3 task details and acceptance criteria
+- [x] Reviewed existing pool.rs (inline .env() calls, spawn + respawn paths)
+- [x] Reviewed managed.rs, lib.rs, Cargo.toml for integration context
+- [x] Wrote plan report to .cline/reports/P1-D3.md
+- [x] STEP 2 — Implemented env.rs module with build_worker_env(), build_base_env(), build_rocm_env(), build_cuda_env(), build_ipex_env()
+- [x] STEP 3 — Updated lib.rs to export `pub mod env`
+- [x] STEP 4 — Wrote 16 unit tests, verified `cargo test -p anvilml-worker` exits 0 (22 passed, 0 failed)
+- [x] Git commit + push
+- [x] Report written to .cline/reports/P1-D3.md
 
 ## Files Changed
 | File | Action |
 |------|--------|
-| `crates/anvilml-worker/src/ipc_bridge.rs` | **Created** — stdin writer + stdout reader tasks |
-| `crates/anvilml-worker/src/managed.rs` | **Modified** — added msg_tx, handle fields |
-| `crates/anvilml-worker/src/pool.rs` | **Modified** — bridge integration, send_to, respawn |
-| `crates/anvilml-worker/src/lib.rs` | **Modified** — pub mod ipc_bridge |
+| `crates/anvilml-worker/src/env.rs` | **Created** — 452 lines, env injection module with 16 tests |
+| `crates/anvilml-worker/src/lib.rs` | **Modified** — added `pub mod env;` |
 
 ## Test Results
-```
-cargo test -p anvilml-worker
-test result: ok. 6 passed; 0 failed; 3 ignored
-```
+- `cargo test -p anvilml-worker`: ✅ 22 passed, 0 failed, 3 ignored (integration tests requiring python3)
