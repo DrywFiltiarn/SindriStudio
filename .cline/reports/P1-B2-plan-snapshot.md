@@ -1,59 +1,140 @@
 # Task Report: P1-B2 — anvilml-registry: SQLite persistence
 
-## Summary
+## Plan (STEP 1)
 
-Implemented full SQLite persistence layer for the AnvilML model registry. The `ModelRegistry` is now async-backed by a `SqlitePool` with proper schema initialization, CRUD operations, and idempotent scan-and-persist.
+### Goal
+Implement `ModelRegistry` backed by SQLite (`sqlx`) for the AnvilML model registry crate.
+The registry persists scanned models, provides CRUD operations, and integrates with
+the filesystem scanner from P1-B1.
 
-## Files Created/Modified
+### Prerequisites
+- **P1-B1** (anvilml-registry: model scanner) — must be complete. The `ModelScanner` struct,
+  `scan()`, `scan_dirs()`, `estimate_vram_mib()`, and `infer_dtype()` are already implemented
+  in `scanner.rs` with 14 passing tests.
 
-### Created
-- `crates/anvilml-registry/src/db.rs` — SQLite pool creation, connection URL parsing, schema initialization via `sqlx::Executor::execute()`
-- `crates/anvilml-registry/migrations/001_models.sql` — SQL migration: `models` table + indexes
+### Files to Create
 
-### Modified
-- `crates/anvilml-registry/Cargo.toml` — Added `sqlx`, `tracing` deps; `tokio` dev-dep for async tests
-- `crates/anvilml-registry/src/lib.rs` — Added `pub mod db;`
-- `crates/anvilml-registry/src/registry.rs` — Full rewrite: async `ModelRegistry` with SQLite backend
+1. **`crates/anvilml-registry/src/db.rs`** — SQLite pool creation and schema initialization
+2. **`crates/anvilml-registry/migrations/001_models.sql`** — SQL migration file
 
-## Implementation Details
+### Files to Modify
 
-### Database Layer (`db.rs`)
-- **Pool creation**: `create_pool(url)` parses URL → creates `SqlitePool` → runs schema init
-- **URL parsing**: Supports `sqlite::memory:`, `sqlite:<path>`, and bare file paths
-- **Schema init**: Uses `sqlx::Executor::execute()` on a pooled connection within a transaction (avoids sqlx compile-time validation issues when `.sqlx` cache is unavailable)
-- **Table schema**: `models` table with `id` PK, `path` UNIQUE, indexes on `kind` and `dtype_hint`
+1. **`crates/anvilml-registry/Cargo.toml`** — Add `sqlx` (workspace), `tracing` deps; add
+   `tokio` dev-dependency with `macros`, `rt-multi-thread` features for async tests.
+2. **`crates/anvilml-registry/src/lib.rs`** — Add `pub mod db;`
+3. **`crates/anvilml-registry/src/registry.rs`** — Full rewrite of `ModelRegistry` with
+   SQLite-backed async methods (scanner integration preserved).
 
-### Registry (`registry.rs`)
-- **`new(pool)`**: Wraps `SqlitePool` in `Arc`
-- **`scan_and_persist(dirs)`**: Scans dirs → upserts each model via `INSERT OR REPLACE` (idempotent)
-- **`list(kind)`**: SELECT with optional `WHERE kind = ?` filter
-- **`get(id)`**: Single row lookup by ID
-- **`count()`**: `SELECT COUNT(*)`
-- **`estimate_vram_mib(size, dtype)`**: Delegates to scanner heuristic
+### Design Decisions
 
-### String Conversion Helpers
-- `kind_to_str` / `str_to_kind`: ModelKind ↔ SQLite TEXT (lowercase)
-- `dtype_to_str` / `str_to_dtype`: DType ↔ SQLite TEXT (snake_case)
+#### 1. Database Layer (`db.rs`)
+- **Pool creation**: `pub async fn create_pool(url: &str) -> Result<SqlitePool>`
+  - Parses URL into `SqliteConnectOptions`
+  - Creates pool with max 4 connections
+  - Runs schema initialization within a transaction
+- **URL parsing**: Supports three formats:
+  - `sqlite::memory:` — in-memory database (for tests)
+  - `sqlite:<path>` or `sqlite://<path>` — file-based database
+  - Bare path string — treated as file path
+- **Schema init**: Uses `sqlx::Executor::execute()` on a pooled connection
+  within a transaction. This avoids sqlx compile-time validation issues
+  when the `.sqlx` cache is not available (common in dev).
+- **Table schema** (`migrations/001_models.sql`):
+  ```sql
+  CREATE TABLE IF NOT EXISTS models (
+      id          TEXT PRIMARY KEY,       -- first 12 hex chars of SHA-256(relative_path)
+      filename    TEXT NOT NULL,
+      path        TEXT NOT NULL UNIQUE,   -- UNIQUE prevents duplicates on re-scan
+      kind        TEXT NOT NULL,
+      size_bytes  INTEGER NOT NULL DEFAULT 0,
+      size_mib    INTEGER NOT NULL DEFAULT 0,
+      dtype_hint  TEXT NOT NULL DEFAULT 'unknown',
+      sha256      TEXT,                   -- nullable, computed lazily
+      scanned_at  DATETIME NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_models_kind ON models(kind);
+  CREATE INDEX IF NOT EXISTS idx_models_dtype ON models(dtype_hint);
+  ```
+- **Idempotent**: All `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`
+  ensure the schema can be applied multiple times safely.
 
-## Test Results
+#### 2. Registry (`registry.rs`)
+- **`ModelRegistry` struct**: Wraps `Arc<SqlitePool>`
+- **Public API**:
+  ```rust
+  impl ModelRegistry {
+      pub async fn new(pool: SqlitePool) -> Result<Self>
+      pub async fn scan_and_persist(&self, dirs: &[ModelDirConfig]) -> Result<usize>
+      pub async fn list(&self, kind: Option<ModelKind>) -> Result<Vec<ModelMeta>>
+      pub async fn get(&self, id: &str) -> Result<Option<ModelMeta>>
+      pub async fn count(&self) -> Result<usize>
+      pub fn estimate_vram_mib(&self, size_bytes: u64, dtype: &DType) -> u64
+  }
+  ```
+- **`scan_and_persist`**: Delegates to `ModelScanner::scan_dirs()`, then upserts each
+  model via `INSERT OR REPLACE INTO models ... VALUES (...)`. Returns count of models
+  discovered. Idempotent due to `INSERT OR REPLACE`.
+- **`list(kind)`**: SELECT with optional `WHERE kind = ? ORDER BY filename`.
+  String conversion: `kind_to_str()` / `str_to_kind()` helpers for ModelKind ↔ TEXT.
+- **`get(id)`**: Single row lookup by ID. Returns `Option<ModelMeta>`.
+- **`count()`**: `SELECT COUNT(*) FROM models`.
+- **`estimate_vram_mib`**: Delegates to `ModelScanner::estimate_vram_mib()` (same
+  heuristic from P1-B1).
+- **Row → ModelMeta conversion**: `row_to_model(SqliteRow)` extracts all columns,
+  converting TEXT back to enums via helper functions.
 
-**23 tests passed, 0 failed:**
+#### 3. String Conversion Helpers (private, in registry.rs)
+- `kind_to_str(ModelKind) -> String` — lowercase string representation
+- `str_to_kind(&str) -> ModelKind` — reverse mapping, defaults to Diffusion on unknown
+- `dtype_to_str(&DType) -> String` — snake_case string representation
+- `str_to_dtype(&str) -> DType` — reverse mapping, defaults to Unknown on unknown
 
-### Scanner tests (14) — unchanged from P1-B1
-### Registry tests (9):
-- `test_scan_and_persist` — discovers and persists 1 model
-- `test_list_returns_all` — returns all persisted models
-- `test_list_filters_by_kind` — filters by ModelKind correctly
-- `test_get_by_id` — correct lookup by ID
-- `test_get_unknown_id` — returns None for unknown
-- `test_scan_idempotent` — re-scan produces no duplicates
-- `test_count` — count starts at 0, increments correctly
-- `test_estimate_vram` — VRAM delegation verified
-- `test_multiple_models` — multiple dirs produce correct count
+### Test Plan (≥5 tests)
 
-## Acceptance Criteria
+All tests use file-based SQLite pools via `tempfile::TempDir` (not in-memory) to avoid
+sqlx concurrency issues with in-memory databases.
 
-- [x] `cargo test -p anvilml-registry --lib` exits 0, ≥5 tests pass (23 passed)
-- [x] `cargo clippy -p anvilml-registry -- -D warnings` exits 0
-- [x] Git commit + push completed (99bef4f on backend main)
-- [x] Scanner integration preserved — scan_and_persist bridges scanner → SQLite
+```rust
+// Helper: create_pool uses tempfile path → SqlitePool
+type TempDir = tempfile::TempDir;
+async fn make_pool(tmp: &TempDir) -> SqlitePool {
+    let db_path = tmp.path().join("test.db");
+    let url = format!("sqlite:{}", db_path.display());
+    db::create_pool(&url).await.expect("create pool")
+}
+```
+
+| # | Test Name | Description |
+|---|-----------|-------------|
+| 1 | `test_scan_and_persist` | Create temp dir with one `.safetensors` file → scan_and_persist returns count=1, verify model persisted in DB |
+| 2 | `test_list_returns_all` | After scan_and_persist, list(None) returns all models (count matches) |
+| 3 | `test_list_filters_by_kind` | Scan with two different kinds → list(Some(Kind::Clip)) returns only Clip models |
+| 4 | `test_get_by_id` | After scan, get(id) returns the correct model for each persisted ID |
+| 5 | `test_get_unknown_id` | get("nonexistent") returns None (not an error) |
+| 6 | `test_scan_idempotent` | Run scan_and_persist twice on same dir → count() == 1 (no duplicates, INSERT OR REPLACE works) |
+| 7 | `test_count` | Empty DB: count() == 0. After scan: count() == N. Verify incrementing behavior. |
+| 8 | `test_estimate_vram` | estimate_vram_mib(1 MiB, Float32) == 1 (basic heuristic sanity check) |
+| 9 | `test_multiple_models` | Two temp dirs with different model files → count() == 2, list() returns both |
+
+### Acceptance Criteria
+- [ ] `cargo test -p anvilml-registry --lib` exits 0, ≥5 tests pass (target: 9+ registry tests + 14 scanner tests = 23 total)
+- [ ] `cargo clippy -p anvilml-registry -- -D warnings` exits 0
+- [ ] Scanner integration preserved — `scan_and_persist` correctly bridges P1-B1 scanner → SQLite
+- [ ] Tests use `sqlite::memory:` or file-based pools (tempfile)
+
+### Risks & Mitigations
+
+| Risk | Mitigation |
+|------|-----------|
+| sqlx compile-time schema validation fails without `.sqlx` cache | Use `sqlx::Executor::execute()` on pooled connection instead of `sqlx::query!` macro |
+| In-memory SQLite concurrency issues with tokio async tests | Use file-based pools in temp directories (not `:memory:`) |
+| String enum conversion mismatches between config and types | Reuse existing `ModelKind` from config module; DType from types module — no duplication |
+
+### Step 2 (Implementation — deferred to Act mode)
+Once this plan is approved, the implementation will:
+1. Create `db.rs` with pool creation + schema init
+2. Create `migrations/001_models.sql`
+3. Modify `Cargo.toml`, `lib.rs`, `registry.rs`
+4. Write 9+ registry tests in `registry.rs` (under `#[cfg(test)] mod tests`)
+5. Run `cargo test -p anvilml-registry --lib` and verify ≥5 pass
+6. Run `cargo clippy -p anvilml-registry -- -D warnings`
