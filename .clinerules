@@ -13,7 +13,8 @@
 #   STEP 1 — PLAN       Read spec. Write plan to report. No code yet. STOP.
 #   STEP 2 — IMPLEMENT  Write exactly what the plan defines. Tests included.
 #   STEP 3 — TEST       Run all tests. All must pass. Record results.
-#   STEP 4 — COMMIT     Commit + push. Finalize report. Call new_task. STOP.
+#   STEP 4 — COMMIT     Local commit only. Finalize report. Call new_task. STOP.
+#                        Do NOT push — the Forge pushes after Discord approval.
 #
 # When step 4 is complete, call new_task and STOP. Do nothing else.
 # Never combine two tasks into one session, even if the second seems trivial.
@@ -103,9 +104,14 @@ Rules:
 - Write test results to the report (commands run, exit codes, pass/fail counts).
 - Update CURRENT_TASK.md: Step = 3-TEST, record results.
 
-## STEP 4 — COMMIT (commit + push + report + new_task)
+## STEP 4 — COMMIT (local commit only + report + new_task)
 
-Execute commits in this exact order. Only commit repos that were modified.
+IMPORTANT: Commit locally but DO NOT push. The Forge orchestrator will push
+after the implementation report has been reviewed and approved on Discord.
+Pushing before approval is a protocol violation — do not do it.
+
+Execute local commits in this exact order. Only commit repos that were modified.
+Do NOT commit or push the root repo (SindriStudio) — the Forge handles that.
 
 ```bash
 # Backend (if modified)
@@ -115,7 +121,7 @@ git commit -m "feat(scope): description
 
 Task: {TASK-ID}
 Tests: {N} passed, 0 failed"
-git push origin develop
+# DO NOT git push — Forge pushes after approval
 
 # Frontend (if modified)
 cd ../frontend
@@ -124,15 +130,7 @@ git commit -m "feat(scope): description
 
 Task: {TASK-ID}
 Tests: {N} passed, 0 failed"
-git push origin develop
-
-# Root repo (always — submodule pointers + report + state files)
-cd ..
-git add -A
-git commit -m "chore(root): update submodules and report for {TASK-ID}
-
-Task: {TASK-ID}"
-git push origin develop
+# DO NOT git push — Forge pushes after approval
 ```
 
 Then:
@@ -141,18 +139,42 @@ Then:
 3. Call new_task with the handoff block (see format below)
 4. STOP — do nothing else
 
+The Forge will post the implementation report to Discord, wait for approval,
+then push all repos (submodules + root) in the correct order.
+
 ## CONTEXT WINDOW
 
-Context management is a fallback, not a routine. Tasks are sized to complete in one
-session. The 4-step cycle should complete without hitting context limits.
+Your context window is 262,144 tokens — the full native context length for Qwen3-35B-A3B.
+No RoPE scaling or YaRN extrapolation is involved at this size.
 
-Emergency only — if context is genuinely exhausted mid-step:
-- Complete the current file or function (never stop mid-file)
-- Run whatever tests are possible in the current state
-- Commit what passes (note partial state clearly in commit message)
-- Write a partial report noting EXACTLY where you stopped and what remains
-- Set CURRENT_TASK.md Step to the step you are still on (not the next step)
-- Use new_task to CONTINUE THE SAME TASK — do not advance to the next task
+Cline reports context usage percentage in environment_details on every request.
+Monitor this actively throughout the session.
+
+### Hard threshold — 65% usage
+
+At 65% that is approximately 170,000 tokens used. This threshold exists as a safety
+margin for the new_task handoff call itself, not because context quality degrades.
+
+If context usage reaches or exceeds 65%, STOP before starting any new tool call.
+Do the following in order:
+
+1. If mid-file: finish writing the current file. Never stop mid-file.
+2. Run whatever tests are possible given the current state.
+3. Commit what passes. Partial progress is better than lost progress.
+   Use a commit message that clearly marks the state:
+   `feat(scope): partial {TASK-ID} — context limit, continuing in next session`
+4. Write the partial report section to `.cline/reports/{TASK-ID}.md` noting
+   exactly which files were created, which were not started, and what remains.
+5. Update `.cline/state/CURRENT_TASK.md` with Step = the step you are still on
+   (do NOT advance to the next step number).
+6. Call new_task with a complete handoff:
+   - Which files were created and their purpose
+   - Which files still need to be created
+   - Exact test state (passing / failing / not run)
+   - The next concrete action to take
+
+A graceful handoff at 65% always beats a crash at 100%.
+The Forge will resume the same task in a fresh session.
 
 ## CURRENT_TASK.md FORMAT
 
