@@ -1,9 +1,12 @@
 # Current Task
 
-**Task ID**: P1-B2
-**Description**: anvilml-registry: SQLite persistence
-**Step**: 4-COMPLETE
-**Status**: DONE
-**Tests**: 23 passed (0 failed)
-**Clippy**: clean
-**Next Step**: new_task
+**Task ID**: P1-C1
+**Description**: Python worker: ipc.py framing
+**Step**: 4-DONE
+**Status**: COMPLETED
+**Tests**: 13 passed, 0 failures
+**Acceptance**: ANVILML_WORKER_MOCK=1 pytest exits 0 with >=5 tests ✅
+**Completed Files**:
+- backend/worker/ipc.py
+- backend/worker/tests/conftest.py
+- backend/worker/tests/test_ipc.py
