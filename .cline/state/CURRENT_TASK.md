@@ -1,13 +1,20 @@
 # Current Task
 
-**Task ID**: P1-C2
-**Description**: Python worker: worker_main.py startup + Ready
+**Task ID**: P1-C3
+**Description**: Python worker: Ping/Pong + MemoryReport + Shutdown
 **Step**: 4-DONE
-**Status**: COMPLETE — implemented, tested (14/14 pass), committed (b938d32), pushed
-**Prerequisites**: P1-C1 (ipc.py framing) ✅
+**Status**: COMPLETE — implemented, tested (9/9 pass), committed (06b570c), pushed
+**Prerequisites**: P1-C2 (worker_main.py startup + Ready) ✅
 
 ## Summary
-- Created `backend/worker/worker_main.py`: CLI parsing, mock mode, threading config, device detection, Ready event emission, IPC read loop
-- Created `backend/worker/tests/test_worker_startup.py`: 14 subprocess-based tests
-- All tests pass (14/14), no regressions in existing IPC tests (13/13)
-- Committed and pushed to backend submodule main branch
+- Modified `backend/worker/worker_main.py`:
+  - Fixed Shutdown handler to emit Dying event before sys.exit(0)
+  - Added MemoryReport daemon thread (every 10s) with threading.Event for clean shutdown
+  - Added thread-safe write_event_safe() with threading.Lock
+  - Passed worker_id through read_loop() for Shutdown handler
+- Created `backend/worker/tests/test_worker_messages.py`: 9 subprocess-based tests
+  - TestPingPongMessage (2 tests): seq matching, multiple pings
+  - TestShutdownBehavior (3 tests): Dying event emission, exit code 0, Ready-before-Dying order
+  - TestMemoryReport (3 tests): worker_id match, VRAM non-negative ints, required fields
+  - TestMessageHandling (1 test): unknown command → Error response
+- All existing tests still pass: 14/14 startup + 13/13 IPC = 27/27 total ✅
